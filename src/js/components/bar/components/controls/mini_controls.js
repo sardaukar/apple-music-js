@@ -13,6 +13,9 @@ const Container = styled.div`
    width: 100%;
    text-align: center;
    border-left: 1px solid ${color.gray[2]};
+   border-top: 1px solid #E9E9E9;
+   border-bottom: 1px solid #E9E9E9;
+   background: #F9F9F9;
    box-sizing: border-box;
    transition: all 0.35s ease;
    cursor: pointer;
@@ -22,6 +25,8 @@ const Container = styled.div`
       css`
          height: 40vh;
          border-left: 1px solid transparent;
+         border-top: none;
+         border-bottom: none;
          width: 100%;
          cursor: default;
          background: #fff;
@@ -87,11 +92,6 @@ const ButtonContainer = styled.div`
    align-items: center;
    justify-content: flex-end;
    padding-right: 16px;
-
-   svg {
-      height: 32px;
-      width: 32px;
-   }
 `;
 
 const Svg = styled.img`
@@ -173,7 +173,7 @@ class MiniControls extends Component {
                  };
       const artwork = hasAudio
          ? `http://tannerv.ddns.net:12345/SpotiFree/${track.artwork}`
-         : `https://lastfm-img2.akamaized.net/i/u/300x300/c6f59c1e5e7240a4c0d427abd71f3dbb`;
+         : `images/default_artwork.svg`;
 
       return (
          <Container
@@ -188,7 +188,7 @@ class MiniControls extends Component {
             </ArtworkContainer>
             <InfoContainer isFullscreen={isFullscreen}>
                <SongTitle>{track.name}</SongTitle>
-               <ButtonContainer>
+               <ButtonContainer size={32}>
                   {!(hasAudio && isPlaying) && (
                      <Svg src={`${path}/play.svg`} onClick={this.resume} />
                   )}

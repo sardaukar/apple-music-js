@@ -11,6 +11,10 @@ const Container = styled.div`
    border-bottom: 1px solid ${color.gray[3]};
    cursor: pointer;
 
+   :first-of-type {
+      border-top: 1px solid ${color.gray[3]};
+   }
+
    &:active {
       background: ${color.gray[2]};
    }
@@ -52,11 +56,6 @@ const OptionsContainer = styled.div`
    display: flex;
    justify-content: center;
    align-items: center;
-
-   svg {
-      height: 20px;
-      width: 20px;
-   }
 `;
 
 const ChevronContainer = styled.div`

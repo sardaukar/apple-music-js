@@ -6,8 +6,9 @@ import {
    fetchPlaylists,
    addToPlaylist,
    removeFromPlaylist,
+   deletePlaylist,
 } from '../../api/actions';
-import { pushView, pushPopup } from '../actions';
+import { pushView, popView, pushPopup } from '../actions';
 import { Button, constants } from '../../toolbox';
 
 const { color } = constants;
@@ -41,6 +42,7 @@ const Artwork = styled.img`
 
 const ButtonContainer = styled.div`
    flex: 1;
+   margin-top: 16px;
 `;
 
 const MobileHeader = styled.div`
@@ -57,13 +59,15 @@ const MobileHeader = styled.div`
 const TitleContainer = styled.div`
    display: flex;
    flex-direction: column;
+   flex: 1;
+   margin-bottom: 16px;
 `;
 
 const Title = styled.h1`
    margin: 0 0 8px;
 
    ${breakpointSm} {
-      font-size: 3.5vh;
+      font-size: 1.5rem;
    }
 `;
 
@@ -73,8 +77,26 @@ const Subtitle = styled.h2`
    margin: 0 0 16px 0;
 
    ${breakpointSm} {
-      font-size: 3vh;
+      font-size: 1.25rem;
    }
+`;
+
+const ActionContainer = styled.div`
+   flex: 1;
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   align-items: flex-end;
+   padding: 0 9px;
+
+   svg, img {
+      cursor: pointer;
+   }
+`;
+
+const Svg = styled.img`
+   height: ${props => props.size || 30}px;
+   width: ${props => props.size || 30}px;
 `;
 
 const VisibleDesktop = styled.div`
@@ -94,6 +116,7 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => {
    return {
       pushView: view => dispatch(pushView(view)),
+      popView: () => dispatch(popView()),
       playSong: ({ playlist, index }) =>
          dispatch(playSong({ playlist, index })),
       addToPlaylist: (track, playlist) =>
@@ -102,16 +125,42 @@ const mapDispatchToProps = dispatch => {
       pushPopup: popup => dispatch(pushPopup(popup)),
       removeFromPlaylist: (track, index) =>
          dispatch(removeFromPlaylist(track, index)),
+      deletePlaylist: playlist => dispatch(deletePlaylist(playlist)),
       fetchPlaylists: () => dispatch(fetchPlaylists()),
    };
 };
 
 class PlaylistView extends Component {
+   constructor(props) {
+      super(props);
+
+      this.state = {
+         playlists: props.apiState.data.playlists,
+      };
+   }
+
+   static getDerivedStateFromProps(nextProps) {
+      const { playlists } = nextProps.apiState.data;
+
+      return {
+         playlists,
+      };
+   }
+
    playSong = ({ playlist, index }) => {
       this.props.playSong({ playlist, index });
    };
 
-   setupOptionsMenu = (track, index) => {
+   deletePlaylist = () => {
+      const { playlist } = this.props;
+
+      this.props.popView();
+      setTimeout(() => {
+         this.props.deletePlaylist(playlist);
+      }, 300);
+   };
+
+   setupTrackOptionsMenu = (track, index) => {
       const { playlist } = this.props;
 
       this.props.pushPopup({
@@ -124,7 +173,7 @@ class PlaylistView extends Component {
                   onClick: () => this.props.addToQueue(track),
                },
                {
-                  label: 'Add to Playlist',
+                  label: 'Add to a Playlist',
                   image: 'add_to_playlist.svg',
                   onClick: () =>
                      this.props.pushPopup({
@@ -134,11 +183,26 @@ class PlaylistView extends Component {
                               this.props.addToPlaylist(track, playlist),
                         },
                      }),
-               }, {
+               },
+               {
                   label: 'Delete from Playlist',
                   image: 'trash.svg',
-                  onClick: () =>
-                     this.props.removeFromPlaylist(index, playlist),
+                  onClick: () => this.props.removeFromPlaylist(index, playlist),
+               },
+            ],
+         },
+      });
+   };
+
+   setupPlaylistOptionsMenu = () => {
+      this.props.pushPopup({
+         name: 'Options',
+         props: {
+            options: [
+               {
+                  label: 'Delete from Library',
+                  image: 'trash.svg',
+                  onClick: this.deletePlaylist,
                },
             ],
          },
@@ -151,8 +215,12 @@ class PlaylistView extends Component {
 
    render() {
       const { playlist, apiState } = this.props;
-      const { playlists, currentTrack } = apiState.data;
+      const playlists = JSON.parse(localStorage.appleMusicPlaylists);
+      if (!playlists) {
+         return null;
+      }
       let { tracks, img, description, title } = playlists[playlist.title];
+      const { currentTrack } = apiState.data;
       img = img || 'images/music.jpg';
 
       return (
@@ -164,6 +232,12 @@ class PlaylistView extends Component {
                <TitleContainer>
                   <Title>{title}</Title>
                   <Subtitle>{description}</Subtitle>
+                  <ActionContainer>
+                     <Svg
+                        src="images/more_circle.svg"
+                        onClick={this.setupPlaylistOptionsMenu}
+                     />
+                  </ActionContainer>
                </TitleContainer>
             </MobileHeader>
             <VisibleDesktop>
@@ -173,8 +247,16 @@ class PlaylistView extends Component {
             </VisibleDesktop>
             <ButtonContainer>
                <VisibleDesktop>
+                  <TitleContainer>
                   <Title>{title}</Title>
                   <Subtitle>{description}</Subtitle>
+                  <ActionContainer>
+                     <Svg
+                        src="images/more_circle.svg"
+                        onClick={this.setupPlaylistOptionsMenu}
+                     />
+                     </ActionContainer>
+                     </TitleContainer>
                </VisibleDesktop>
                {tracks &&
                   tracks.map((item, index) => {
@@ -190,7 +272,7 @@ class PlaylistView extends Component {
                            }
                            OptionsMenu={true}
                            onOptionsClick={() =>
-                              this.setupOptionsMenu(item, index)
+                              this.setupTrackOptionsMenu(item, index)
                            }
                            onClick={() =>
                               this.playSong({ playlist: tracks, index })
